@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+
+   <!--  <extension
+         point="org.eclipse.ui.perspectives">
+      <perspective
+            class="com.vshatrov.smvplayer.Perspective"
+            name="Perspective"
+            id="com.vshatrov.smvplayer.perspective">
+      </perspective>
+   </extension> -->
+   <extension point="org.eclipse.ui.views">
+      <category
+      	name="SMV Player"
+      	id="com.vshatrov.smvplayer"
+      > 
+      </category>
+      <view
+            class="com.vshatrov.smvplayer.CounterExampleView"
+            name="SMV Counterexample"
+            category="com.vshatrov.smvplayer"
+            id="com.vshatrov.smvplayer.counterexampleview"
+            >
+      </view>
+   </extension>
+   <extension point="org.eclipse.ui.commands">
+	    <command
+	            categoryId="org.eclipse.fordiac.ide.commands.category"
+	            id="com.vshatrov.openPlayer"
+	            name="Open SMV player">
+	      </command>
+   </extension>
+   
+   <extension
+         point="org.eclipse.ui.handlers">
+      <handler
+            class="com.vshatrov.smvplayer.OpenSmvPlayerAction"
+            commandId="com.vshatrov.openPlayer">
+      </handler>
+   </extension>
+   
+   <extension
+         point="org.eclipse.ui.editors">
+		<editor
+	            class="com.vshatrov.smvplayer.SmvPlayer"
+	            contributorClass="org.eclipse.fordiac.ide.util.ZoomUndoRedoActionBarContributor"
+	            icon="fordiacimage://ICON_CompositeFB"
+	            id="com.vshatrov.smvplayer.SmvPlayer"
+	            name="SmvPlayer">
+	    </editor>
+	</extension>
+
+   <extension
+         point="org.eclipse.ui.menus">
+ 	<menuContribution
+            allPopups="false"
+            locationURI="popup:org.eclipse.ui.popup.any?after=additions">
+         <command
+               commandId="com.vshatrov.openPlayer">
+            <visibleWhen
+                  checkEnabled="false">
+               <reference definitionId="org.eclipse.fordiac.ide.onlineedit.FBDefinition" />
+            </visibleWhen>
+         </command>
+   	</menuContribution>
+   </extension>
+   <!-- <extension
+         point="org.eclipse.ui.perspectiveExtensions">
+      <perspectiveExtension
+            targetID="*">
+         <view
+               id="com.vshatrov.smvplayer.view"
+               minimized="false"
+               relationship="left"
+               standalone="true"
+               relative="org.eclipse.ui.editorss">
+         </view>
+      </perspectiveExtension>
+   </extension> -->
+  
+
+</plugin>
