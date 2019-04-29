@@ -12,6 +12,9 @@
  *******************************************************************************/
 package com.vshatrov.smvplayer;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.eclipse.fordiac.ide.application.editparts.FBEditPart;
 import org.eclipse.fordiac.ide.application.policies.FBNElementSelectionPolicy;
 import org.eclipse.fordiac.ide.fbtypeeditor.network.editparts.AdapterFBEditPart;
@@ -40,6 +43,7 @@ class SmvPlayerEditPartFactory extends CompositeNetworkEditPartFactory {
 
 	private FB fbInstance;
 	private FBEditPart fbEditPart;
+	public Map<Object, EditPart> mapping = new HashMap<Object, EditPart>();
 	
 
 	public SmvPlayerEditPartFactory(GraphicalEditor editor, FB fbInstance, FBEditPart fbEditPart, ZoomManager zoomManager) {
@@ -63,7 +67,12 @@ class SmvPlayerEditPartFactory extends CompositeNetworkEditPartFactory {
 	 */
 	@Override
 	protected EditPart getPartForElement(final EditPart context, final Object modelElement) {
+		EditPart editPart = getPartInternal(context, modelElement);
+		mapping.put(modelElement, editPart);
+		return editPart;
+	}
 
+	private EditPart getPartInternal(EditPart context, Object modelElement) {
 		if (modelElement instanceof FBNetwork) {
 			CompositeNetworkViewerEditPart compositeNetEP = new CompositeNetworkViewerEditPart();
 			compositeNetEP.setFbInstance(fbInstance);
@@ -104,7 +113,6 @@ class SmvPlayerEditPartFactory extends CompositeNetworkEditPartFactory {
 		}
 		
 		return super.getPartForElement(context, modelElement);
-		
 	}
 
 }

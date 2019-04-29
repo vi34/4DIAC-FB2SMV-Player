@@ -50,6 +50,12 @@
 	            name="SmvPlayer">
 	    </editor>
 	</extension>
+    <extension
+            point="org.eclipse.fordiac.ide.gef.ChildrenProvider">
+        <children
+                class="com.vshatrov.smvplayer.SimulationManager">
+        </children>
+    </extension>
 
    <extension
          point="org.eclipse.ui.menus">

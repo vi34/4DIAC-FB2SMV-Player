@@ -13,13 +13,16 @@
 package com.vshatrov.smvplayer;
 
 import java.util.EventObject;
+import java.util.List;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.fordiac.ide.application.editparts.FBEditPart;
 import org.eclipse.fordiac.ide.application.viewer.composite.CompositeInstanceViewerInput;
+import org.eclipse.fordiac.ide.fbtypeeditor.network.viewer.InterfaceEditPartForFBNetworkRO;
 import org.eclipse.fordiac.ide.gef.DiagramEditor;
 import org.eclipse.fordiac.ide.gef.ZoomUndoRedoContextMenuProvider;
+import org.eclipse.fordiac.ide.gef.editparts.InterfaceEditPart;
 import org.eclipse.fordiac.ide.model.libraryElement.Application;
 import org.eclipse.fordiac.ide.model.libraryElement.AutomationSystem;
 import org.eclipse.fordiac.ide.model.libraryElement.CompositeFBType;
@@ -29,7 +32,9 @@ import org.eclipse.fordiac.ide.model.libraryElement.INamedElement;
 import org.eclipse.fordiac.ide.util.AdvancedPanningSelectionTool;
 import org.eclipse.gef.ContextMenuProvider;
 import org.eclipse.gef.DefaultEditDomain;
+import org.eclipse.gef.EditPart;
 import org.eclipse.gef.EditPartFactory;
+import org.eclipse.gef.EditPartViewer;
 import org.eclipse.gef.GraphicalViewer;
 import org.eclipse.gef.editparts.ZoomManager;
 import org.eclipse.gef.ui.parts.ScrollingGraphicalViewer;
@@ -39,13 +44,25 @@ import org.eclipse.ui.IEditorInput;
 public class SmvPlayer extends DiagramEditor {
 
 	private FB fb;
-	private CompositeFBType cfbt;
+	public CompositeFBType cfbt;
 	private FBEditPart fbEditPart;
+	private SmvPlayerEditPartFactory editPartFactory = null;
 	
+
+	public FBEditPart getFbEditPart() {
+		return fbEditPart;
+	}
+
+	public void setFbEditPart(FBEditPart fbEditPart) {
+		this.fbEditPart = fbEditPart;
+	}
 
 	@Override
 	protected EditPartFactory getEditPartFactory() {
-		return new SmvPlayerEditPartFactory(this, fb, fbEditPart, getZoomManger());
+		if (editPartFactory == null) {
+			editPartFactory = new SmvPlayerEditPartFactory(this, fb, fbEditPart, getZoomManger());
+		}
+		return editPartFactory;
 	}
 
 	@Override
@@ -116,7 +133,6 @@ public class SmvPlayer extends DiagramEditor {
 	}
 	
 	private String getNameHierarchy() {
-		//TODO mabye a nice helper function to be put into the fb model
 		StringBuilder retVal =  new StringBuilder(fb.getName());
 		EObject cont = fb.eContainer().eContainer();
 		while(cont instanceof INamedElement){
@@ -127,6 +143,24 @@ public class SmvPlayer extends DiagramEditor {
 			cont = cont.eContainer().eContainer();
 		}		
 		return retVal.toString();
+	}
+
+	public void setStep(int step) {
+		EditPartViewer viewer = getViewer();
+		EditPart fbEditPart = viewer.getContents();
+		FB fb = cfbt.getFBNetwork().getFBNamed("counter" + (step % 2 + 1));
+		EditPart fbEdit = editPartFactory.mapping.get(fb);
+		EditPart network = fbEdit.getParent();
+		viewer.deselectAll();
+		viewer.select(fbEdit);
+
+		InterfaceEditPartForFBNetworkRO inteface = (InterfaceEditPartForFBNetworkRO) fbEdit.getChildren().get(fbEdit.getChildren().size() - 1);
+		InterfaceEditPart.InterfaceFigure figure = (InterfaceEditPart.InterfaceFigure) inteface.getFigure();
+		ValueElement valueElement = new ValueElement(inteface, fb);
+		SimulationManager.addValueElement(valueElement);
+		figure.setText("X");
+		network.refresh();
+
 	}
 
 }
