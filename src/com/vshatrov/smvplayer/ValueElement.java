@@ -15,6 +15,9 @@ public class ValueElement extends EObjectImpl implements IEditPartCreator {
     InterfaceEditPart parentPart;
     FB fb;
     String value;
+    String evValue;
+    String tsLast;
+    String tsBorn;
 
     public ValueElement(InterfaceEditPart inteface, FB fb) {
         parentPart = inteface;
@@ -39,6 +42,23 @@ public class ValueElement extends EObjectImpl implements IEditPartCreator {
         value = newValue;
         if (eNotificationRequired()) {
             eNotify(new ENotificationImpl(this, Notification.SET, VALUE_CHANGE_FEATURE_ID, oldValue, newValue));
+        }
+    }
+
+    public void setCurrentEventValue(String newValue, String attribute) {
+        switch (attribute) {
+            case "ts_last" : tsLast = newValue; break;
+            case "ts_born" : tsBorn = newValue; break;
+            case "value":
+            default: evValue = newValue; break;
+        }
+        if (tsBorn != null || tsLast != null) {
+            value = "V:" + evValue.substring(0, 1) + " TB:" + tsBorn + " TL:" + tsLast;
+        } else {
+            value = evValue;
+        }
+        if (eNotificationRequired()) {
+            eNotify(new ENotificationImpl(this, Notification.SET, VALUE_CHANGE_FEATURE_ID, "", value));
         }
     }
 }

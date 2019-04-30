@@ -1,6 +1,6 @@
 /*******************************************************************************
  * Copyright (c) 2015 - 2017 fortiss GmbH
- * 
+ *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -17,6 +17,8 @@ import org.eclipse.draw2d.Label;
 import org.eclipse.draw2d.MarginBorder;
 import org.eclipse.draw2d.PositionConstants;
 import org.eclipse.draw2d.geometry.Dimension;
+import org.eclipse.draw2d.geometry.Point;
+import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.ecore.util.EContentAdapter;
 import org.eclipse.fordiac.ide.gef.draw2d.SetableAlphaLabel;
@@ -110,6 +112,17 @@ public class ValueEditPart extends AbstractValueBaseEditPart {
 			}
 
 		};
+	}
+
+	@Override
+	protected Point calculatePos() {
+		/*if (!isEvent()) */return super.calculatePos();
+
+		/*if (parentPart != null) {
+			Rectangle bounds = parentPart.getFigure().getBounds();
+            return new Point(bounds.x, bounds.y);
+		}
+		return new Point(0, 0);*/
 	}
 
 	@Override

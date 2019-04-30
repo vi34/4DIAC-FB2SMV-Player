@@ -13,7 +13,6 @@
 package com.vshatrov.smvplayer;
 
 import com.vshatrov.smvplayer.read.CounterExample;
-import org.apache.commons.lang.StringUtils;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.fordiac.ide.application.editparts.FBEditPart;
@@ -30,8 +29,6 @@ import org.eclipse.jface.util.TransferDropTargetListener;
 import org.eclipse.ui.IEditorInput;
 
 import java.util.EventObject;
-import java.util.HashMap;
-import java.util.Map;
 
 public class SmvPlayer extends DiagramEditor {
 
@@ -156,7 +153,16 @@ public class SmvPlayer extends DiagramEditor {
 				IInterfaceElement iface = mapper.var2Interface.get(qualifier);
 				FB fb = mapper.var2FB.get(qualifier);
 				String value = counterExample.data[i][currentState];
-				setValue(fb, iface, value);
+				if (iface instanceof Event) {
+					String attribute = qualifier.parts.get(qualifier.parts.size() - 1);
+					switch (attribute) {
+						case "value": case "ts_last": case "ts_born": break;
+						default: attribute = "value"; break;
+					}
+					setEvent(fb, iface, value, attribute);
+				} else {
+					setValue(fb, iface, value);
+				}
 			}
 
 			if (mapper.isTimeVar(qualifier)) {
@@ -200,6 +206,12 @@ public class SmvPlayer extends DiagramEditor {
 		}
 	}
 
+	private void setEvent(FB fb, IInterfaceElement iface, String value, String attribute) {
+		InterfaceEditPart editPart = (InterfaceEditPart) editPartFactory.mapping.get(iface);
+		ValueElement valueElement = SimulationManager.getValueElement(editPart, fb);
+		valueElement.setCurrentEventValue(value, attribute);
+	}
+
 	private void setValue(FB fb, IInterfaceElement iface, String value) {
 		InterfaceEditPart editPart = (InterfaceEditPart) editPartFactory.mapping.get(iface);
 		ValueElement valueElement = SimulationManager.getValueElement(editPart, fb);
@@ -225,56 +237,5 @@ public class SmvPlayer extends DiagramEditor {
 	public void setCEView(CounterExampleView counterExampleView) {
 		this.counterExampleView = counterExampleView;
 	}
-
-	static class Mapper {
-		public static final String ROOT_FB_SUFFIX = "_inst";
-		public static final String ALPHA = "_alpha";
-		String rootFBName;
-		public Map<CounterExample.VarQualifier, FB> var2FB = new HashMap<>();
-		public Map<CounterExample.VarQualifier, IInterfaceElement> var2Interface = new HashMap<>();
-
-		public Mapper(String topFB) {
-			rootFBName = topFB;
-		}
-
-		public boolean isRootFB(String smvName) {
-			return smvName.startsWith(rootFBName + ROOT_FB_SUFFIX);
-		}
-
-		public boolean isExecutionVar(CounterExample.VarQualifier smvVar) {
-			return smvVar.parts.get(smvVar.parts.size() - 1).endsWith(ALPHA);
-		}
-
-		public void findMapping(CounterExample.VarQualifier qualifier, FB root) {
-			if (qualifier.parts.size() > 1) {
-				String part = trimPart(qualifier.parts.get(1));
-				FB fb = ((CompositeFBType)root.getType()).getFBNetwork().getFBNamed(part);
-				if (fb == null) fb = root;
-				var2FB.put(qualifier, fb);
-				if (qualifier.parts.size() > 2) {
-					String var = qualifier.parts.get(2);
-					IInterfaceElement iface = fb.getInterfaceElement(var);
-					if (iface != null) {
-						var2Interface.put(qualifier, iface);
-					}
-				}
-			} else if (qualifier.parts.get(0).startsWith(rootFBName)) {
-				var2FB.put(qualifier, root);
-			}
-		}
-
-		public FB getFB(CounterExample.VarQualifier qualifier) {
-			return var2FB.get(qualifier);
-		}
-
-		private String trimPart(String qualifierPart) {
-			return StringUtils.substringBeforeLast(qualifierPart, "_");
-		}
-
-		public boolean isTimeVar(CounterExample.VarQualifier qualifier) {
-			return qualifier.FQN.equals("TGlobal");
-		}
-	}
-
 
 }
