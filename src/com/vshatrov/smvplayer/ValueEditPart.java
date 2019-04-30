@@ -88,7 +88,7 @@ public class ValueEditPart extends AbstractValueBaseEditPart {
 		l.setBorder(new MarginBorder(0, 5, 0, 5));
 		l.setText("N/A");
 		l.setMinimumSize(new Dimension(50, 1));
-		l.setAlpha(190);
+		l.setAlpha(220);
 		return l;
 	}
 

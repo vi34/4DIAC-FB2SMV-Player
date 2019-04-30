@@ -14,9 +14,7 @@
  *******************************************************************************/
 package com.vshatrov.smvplayer;
 
-import org.eclipse.draw2d.AncestorListener;
-import org.eclipse.draw2d.IFigure;
-import org.eclipse.draw2d.Label;
+import org.eclipse.draw2d.*;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.fordiac.ide.application.SpecificLayerEditPart;
@@ -33,10 +31,11 @@ import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.swt.graphics.Color;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public abstract class AbstractValueBaseEditPart extends AbstractViewEditPart implements SpecificLayerEditPart{
 
-	InterfaceEditPart parentPart;
+	protected InterfaceEditPart parentPart;
 
 	private IPropertyChangeListener listener;
 
@@ -165,7 +164,7 @@ public abstract class AbstractValueBaseEditPart extends AbstractViewEditPart imp
 		return super.understandsRequest(request);
 	}
 	
-	private Point calculatePos() {
+	protected Point calculatePos() {
 		if (parentPart != null) {
 			Rectangle bounds = parentPart.getFigure().getBounds();
 			int x = 0;
@@ -201,10 +200,24 @@ public abstract class AbstractValueBaseEditPart extends AbstractViewEditPart imp
 			bounds = new Rectangle(p.x, p.y, width, -1);
 			((GraphicalEditPart) getParent()).setLayoutConstraint(this,
 					getFigure(), bounds);
-
+			toFront();
 		}
 	}
-	
+
+	private void toFront() {
+		IFigure figure = getFigure();
+		while (!(figure instanceof LayeredPane)) {
+			figure = figure.getParent();
+		}
+		LayeredPane layeredPane = (LayeredPane) figure;
+		String primary_layer_key = "Primary Layer";
+		String connection_layer_key = "Connection Layer";
+		Layer primary_layer = layeredPane.getLayer(primary_layer_key);
+		layeredPane.removeLayer(primary_layer_key);
+		layeredPane.addLayerAfter(primary_layer, primary_layer_key, connection_layer_key);
+		layeredPane.repaint();
+	}
+
 	protected void setBackgroundColor(IFigure l) {
 		l.setBackgroundColor(new Color(null, 37, 237, 182));
 	}

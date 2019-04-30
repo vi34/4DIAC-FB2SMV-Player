@@ -12,34 +12,26 @@
  *******************************************************************************/
 package com.vshatrov.smvplayer;
 
-import java.util.EventObject;
-import java.util.List;
-
+import com.vshatrov.smvplayer.read.CounterExample;
+import org.apache.commons.lang.StringUtils;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.fordiac.ide.application.editparts.FBEditPart;
 import org.eclipse.fordiac.ide.application.viewer.composite.CompositeInstanceViewerInput;
-import org.eclipse.fordiac.ide.fbtypeeditor.network.viewer.InterfaceEditPartForFBNetworkRO;
 import org.eclipse.fordiac.ide.gef.DiagramEditor;
 import org.eclipse.fordiac.ide.gef.ZoomUndoRedoContextMenuProvider;
 import org.eclipse.fordiac.ide.gef.editparts.InterfaceEditPart;
-import org.eclipse.fordiac.ide.model.libraryElement.Application;
-import org.eclipse.fordiac.ide.model.libraryElement.AutomationSystem;
-import org.eclipse.fordiac.ide.model.libraryElement.CompositeFBType;
-import org.eclipse.fordiac.ide.model.libraryElement.FB;
-import org.eclipse.fordiac.ide.model.libraryElement.FBNetwork;
-import org.eclipse.fordiac.ide.model.libraryElement.INamedElement;
+import org.eclipse.fordiac.ide.model.libraryElement.*;
 import org.eclipse.fordiac.ide.util.AdvancedPanningSelectionTool;
-import org.eclipse.gef.ContextMenuProvider;
-import org.eclipse.gef.DefaultEditDomain;
-import org.eclipse.gef.EditPart;
-import org.eclipse.gef.EditPartFactory;
-import org.eclipse.gef.EditPartViewer;
-import org.eclipse.gef.GraphicalViewer;
+import org.eclipse.gef.*;
 import org.eclipse.gef.editparts.ZoomManager;
 import org.eclipse.gef.ui.parts.ScrollingGraphicalViewer;
 import org.eclipse.jface.util.TransferDropTargetListener;
 import org.eclipse.ui.IEditorInput;
+
+import java.util.EventObject;
+import java.util.HashMap;
+import java.util.Map;
 
 public class SmvPlayer extends DiagramEditor {
 
@@ -47,7 +39,12 @@ public class SmvPlayer extends DiagramEditor {
 	public CompositeFBType cfbt;
 	private FBEditPart fbEditPart;
 	private SmvPlayerEditPartFactory editPartFactory = null;
-	
+	private CounterExampleView counterExampleView;
+	private int currentState = 0;
+	private CounterExample counterExample;
+	private Mapper mapper;
+	private String currentFB;
+	private int currentTime = 0;
 
 	public FBEditPart getFbEditPart() {
 		return fbEditPart;
@@ -104,6 +101,7 @@ public class SmvPlayer extends DiagramEditor {
 				//cfbt = EcoreUtil.copy((CompositeFBType) fb.getFBType()); 
 				cfbt = (CompositeFBType) fb.getType();
 				this.fbEditPart = untypedInput.getFbEditPart();
+				mapper = new Mapper(cfbt.getName());
 			}
 		}
 	}
@@ -145,22 +143,138 @@ public class SmvPlayer extends DiagramEditor {
 		return retVal.toString();
 	}
 
-	public void setStep(int step) {
-		EditPartViewer viewer = getViewer();
-		EditPart fbEditPart = viewer.getContents();
-		FB fb = cfbt.getFBNetwork().getFBNamed("counter" + (step % 2 + 1));
-		EditPart fbEdit = editPartFactory.mapping.get(fb);
-		EditPart network = fbEdit.getParent();
-		viewer.deselectAll();
-		viewer.select(fbEdit);
-
-		InterfaceEditPartForFBNetworkRO inteface = (InterfaceEditPartForFBNetworkRO) fbEdit.getChildren().get(fbEdit.getChildren().size() - 1);
-		InterfaceEditPart.InterfaceFigure figure = (InterfaceEditPart.InterfaceFigure) inteface.getFigure();
-		ValueElement valueElement = new ValueElement(inteface, fb);
-		SimulationManager.addValueElement(valueElement);
-		figure.setText("X");
-		network.refresh();
-
+	public void setState(int step) {
+		currentState = step;
+		updateCurrentFB();
+		updateVars();
 	}
+
+	private void updateVars() {
+		for (int i = 0; i < counterExample.vars.length; i++) {
+			CounterExample.VarQualifier qualifier = counterExample.vars[i];
+			if (mapper.var2Interface.containsKey(qualifier)) {
+				IInterfaceElement iface = mapper.var2Interface.get(qualifier);
+				FB fb = mapper.var2FB.get(qualifier);
+				String value = counterExample.data[i][currentState];
+				setValue(fb, iface, value);
+			}
+
+			if (mapper.isTimeVar(qualifier)) {
+				try {
+					currentTime = Integer.parseInt(counterExample.data[i][currentState]);
+					counterExampleView.setTime(currentTime);
+				} catch (NumberFormatException e) { }
+			}
+		}
+	}
+
+	private void updateCurrentFB() {
+		boolean found = false;
+		for (int i = 0; i < counterExample.vars.length; i++) {
+			CounterExample.VarQualifier qualifier = counterExample.vars[i];
+			if (mapper.isExecutionVar(qualifier)) {
+				if (counterExample.data[i][currentState].equals("TRUE")) {
+					FB fb = mapper.getFB(qualifier);
+					if (fb != null) {
+						highlightFB(fb);
+					}
+					setCurrentFB(qualifier.FQN);
+					found = true;
+				}
+			}
+		}
+		if (!found) {
+			setCurrentFB("");
+			getViewer().deselectAll();
+		}
+	}
+
+	private void highlightFB(FB fb) {
+		EditPartViewer viewer = getViewer();
+		viewer.deselectAll();
+		if (fb != this.fb) {
+			EditPart fbEdit = editPartFactory.mapping.get(fb);
+			EditPart network = fbEdit.getParent();
+			viewer.select(fbEdit);
+			network.refresh();
+		}
+	}
+
+	private void setValue(FB fb, IInterfaceElement iface, String value) {
+		InterfaceEditPart editPart = (InterfaceEditPart) editPartFactory.mapping.get(iface);
+		ValueElement valueElement = SimulationManager.getValueElement(editPart, fb);
+		valueElement.setCurrentValue(value);
+	}
+
+	public void setCounterExample(CounterExample counterExample) {
+		this.counterExample = counterExample;
+		for (int i = 0; i < counterExample.vars.length; i++) {
+			CounterExample.VarQualifier qualifier = counterExample.vars[i];
+			if (mapper.isRootFB(qualifier.parts.get(0))) {
+				qualifier.mapped = true;
+				mapper.findMapping(qualifier, fb);
+			}
+		}
+	}
+
+	private void setCurrentFB(String fqn) {
+		currentFB = fqn;
+		counterExampleView.setCurrentFB(currentFB);
+	}
+
+	public void setCEView(CounterExampleView counterExampleView) {
+		this.counterExampleView = counterExampleView;
+	}
+
+	static class Mapper {
+		public static final String ROOT_FB_SUFFIX = "_inst";
+		public static final String ALPHA = "_alpha";
+		String rootFBName;
+		public Map<CounterExample.VarQualifier, FB> var2FB = new HashMap<>();
+		public Map<CounterExample.VarQualifier, IInterfaceElement> var2Interface = new HashMap<>();
+
+		public Mapper(String topFB) {
+			rootFBName = topFB;
+		}
+
+		public boolean isRootFB(String smvName) {
+			return smvName.startsWith(rootFBName + ROOT_FB_SUFFIX);
+		}
+
+		public boolean isExecutionVar(CounterExample.VarQualifier smvVar) {
+			return smvVar.parts.get(smvVar.parts.size() - 1).endsWith(ALPHA);
+		}
+
+		public void findMapping(CounterExample.VarQualifier qualifier, FB root) {
+			if (qualifier.parts.size() > 1) {
+				String part = trimPart(qualifier.parts.get(1));
+				FB fb = ((CompositeFBType)root.getType()).getFBNetwork().getFBNamed(part);
+				if (fb == null) fb = root;
+				var2FB.put(qualifier, fb);
+				if (qualifier.parts.size() > 2) {
+					String var = qualifier.parts.get(2);
+					IInterfaceElement iface = fb.getInterfaceElement(var);
+					if (iface != null) {
+						var2Interface.put(qualifier, iface);
+					}
+				}
+			} else if (qualifier.parts.get(0).startsWith(rootFBName)) {
+				var2FB.put(qualifier, root);
+			}
+		}
+
+		public FB getFB(CounterExample.VarQualifier qualifier) {
+			return var2FB.get(qualifier);
+		}
+
+		private String trimPart(String qualifierPart) {
+			return StringUtils.substringBeforeLast(qualifierPart, "_");
+		}
+
+		public boolean isTimeVar(CounterExample.VarQualifier qualifier) {
+			return qualifier.FQN.equals("TGlobal");
+		}
+	}
+
 
 }

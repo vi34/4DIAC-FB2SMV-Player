@@ -2,17 +2,26 @@ package com.vshatrov.smvplayer;
 
 import org.eclipse.fordiac.ide.gef.editparts.IChildrenProvider;
 import org.eclipse.fordiac.ide.gef.editparts.IEditPartCreator;
+import org.eclipse.fordiac.ide.gef.editparts.InterfaceEditPart;
 import org.eclipse.fordiac.ide.model.libraryElement.FB;
 import org.eclipse.fordiac.ide.model.libraryElement.FBNetwork;
+import org.eclipse.gef.EditPart;
 
 import java.util.*;
 
 public class SimulationManager implements IChildrenProvider {
 
-    private static Map<FB, ValueElement> simulatedElements = new HashMap<>();
+    private static Map<EditPart, ValueElement> simulatedElements = new HashMap<>();
 
-    public static void addValueElement(ValueElement element) {
-        simulatedElements.put(element.fb, element);
+
+    public static ValueElement getValueElement(InterfaceEditPart editPart, FB fb) {
+        if (simulatedElements.containsKey(editPart)) {
+            return simulatedElements.get(editPart);
+        } else {
+            ValueElement valueElement = new ValueElement(editPart, fb);
+            simulatedElements.put(editPart, valueElement);
+            return valueElement;
+        }
     }
 
     public Collection<ValueElement> getSimulatedElements() {

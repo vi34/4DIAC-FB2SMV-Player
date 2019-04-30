@@ -4,38 +4,38 @@ package com.vshatrov.smvplayer.read;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.fordiac.ide.model.libraryElement.CompositeFBType;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.swt.widgets.TableItem;
 
 public class CounterExampleReader {
 
 	final String DATA_DELIMETER = ",";
-	final String NAME_DELIMETER = ".";
-	private CompositeFBType topFB;
+	final String NAME_DELIMETER = "[.]";
 	
 	public CounterExample readCSV(String filePath) throws IOException {
 		CounterExample result = new CounterExample(); 
 		List<String> lines = Files.readAllLines(Paths.get(filePath));
-		String[] states = lines.get(0).split(DATA_DELIMETER);
-		result.length = states.length - 1;
+		String[] states = lines.get(0).replaceAll("-1[.]", "").split(DATA_DELIMETER);
+		result.states = Arrays.copyOfRange(states, 1, states.length);
+		result.data = new String[lines.size() - 1][states.length - 1];
+		result.vars = new CounterExample.VarQualifier[lines.size() - 1];
+
 		for (int i = 1; i < lines.size(); i++) {
 			String[] var = lines.get(i).split(DATA_DELIMETER);
-			String name = var[0];
-			String[] nameParts = name.split(NAME_DELIMETER);
-			if (isTopLevelFB(nameParts[0])) {
-				
-			}
+			List<String> nameParts = Arrays.asList(var[0].split(NAME_DELIMETER));
+			CounterExample.VarQualifier varQualifier = new CounterExample.VarQualifier();
+			varQualifier.FQN = var[0];
+			varQualifier.parts = nameParts;
+			result.vars[i - 1] = varQualifier;
+			result.data[i - 1] = Arrays.copyOfRange(var, 1, var.length);
 		}
 		return result;
 	}
 
-	private boolean isTopLevelFB(String smvName) {
-		return smvName.startsWith(this.topFB.getName()) && smvName.endsWith("_inst");
-	}
-
-	public void setFB(CompositeFBType cfbt) {
-		this.topFB = cfbt;
-	}
 	
 }
