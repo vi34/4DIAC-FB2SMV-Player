@@ -149,20 +149,27 @@ public class SmvPlayer extends DiagramEditor {
 	private void updateVars() {
 		for (int i = 0; i < counterExample.vars.length; i++) {
 			CounterExample.VarQualifier qualifier = counterExample.vars[i];
+			String value = counterExample.data[i][currentState];
+			FB fb = mapper.var2FB.get(qualifier);
 			if (mapper.var2Interface.containsKey(qualifier)) {
 				IInterfaceElement iface = mapper.var2Interface.get(qualifier);
-				FB fb = mapper.var2FB.get(qualifier);
-				String value = counterExample.data[i][currentState];
 				if (iface instanceof Event) {
 					String attribute = qualifier.parts.get(qualifier.parts.size() - 1);
 					switch (attribute) {
-						case "value": case "ts_last": case "ts_born": break;
-						default: attribute = "value"; break;
+						case "value":
+						case "ts_last":
+						case "ts_born":
+							break;
+						default:
+							attribute = "value";
+							break;
 					}
 					setEvent(fb, iface, value, attribute);
 				} else {
 					setValue(fb, iface, value);
 				}
+			} else if (fb != null && mapper.isMappedInternal(qualifier)) {
+				setInternalValue(fb, value);
 			}
 
 			if (mapper.isTimeVar(qualifier)) {
@@ -214,6 +221,12 @@ public class SmvPlayer extends DiagramEditor {
 
 	private void setValue(FB fb, IInterfaceElement iface, String value) {
 		InterfaceEditPart editPart = (InterfaceEditPart) editPartFactory.mapping.get(iface);
+		ValueElement valueElement = SimulationManager.getValueElement(editPart, fb);
+		valueElement.setCurrentValue(value);
+	}
+
+	private void setInternalValue(FB fb, String value) {
+		EditPart editPart = editPartFactory.mapping.get(fb);
 		ValueElement valueElement = SimulationManager.getValueElement(editPart, fb);
 		valueElement.setCurrentValue(value);
 	}

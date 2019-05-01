@@ -69,4 +69,8 @@ class Mapper {
     public boolean isTimeVar(CounterExample.VarQualifier qualifier) {
         return qualifier.FQN.equals("TGlobal");
     }
+
+    public boolean isMappedInternal(CounterExample.VarQualifier qualifier) {
+        return qualifier.parts.get(qualifier.parts.size() - 1).equals("Q_smv");
+    }
 }

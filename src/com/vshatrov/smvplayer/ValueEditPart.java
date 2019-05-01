@@ -24,8 +24,9 @@ import org.eclipse.emf.ecore.util.EContentAdapter;
 import org.eclipse.fordiac.ide.gef.draw2d.SetableAlphaLabel;
 import org.eclipse.fordiac.ide.gef.editparts.InterfaceEditPart;
 import org.eclipse.fordiac.ide.model.libraryElement.Event;
+import org.eclipse.fordiac.ide.model.libraryElement.IInterfaceElement;
+import org.eclipse.fordiac.ide.model.libraryElement.INamedElement;
 import org.eclipse.fordiac.ide.model.libraryElement.VarDeclaration;
-import org.eclipse.fordiac.ide.model.monitoring.MonitoringElement;
 import org.eclipse.gef.EditPolicy;
 import org.eclipse.gef.Request;
 import org.eclipse.gef.RequestConstants;
@@ -48,27 +49,26 @@ public class ValueEditPart extends AbstractValueBaseEditPart {
 		return getInterfaceElement() instanceof VarDeclaration;
 	}
 
+	protected boolean isInput() {
+		return getInterfaceElement().isIsInput();
+	}
+
+	protected IInterfaceElement getInterfaceElement() {
+		return ((InterfaceEditPart) parentPart).getModel();
+	}
+
+	@Override
+	public INamedElement getINamedElement() {
+		return getInterfaceElement();
+	}
+
 	@Override
 	public ValueElement getModel() {
 		return (ValueElement) super.getModel();
 	}
 
 	@Override
-	protected void createEditPolicies() {
-		if(!isEvent()) {
-			//only allow direct edit if it is not an event, see Bug 510735 for details.
-			installEditPolicy(EditPolicy.DIRECT_EDIT_ROLE, new DirectEditPolicy(){
-				@Override
-				protected Command getDirectEditCommand(DirectEditRequest request) {
-					return null;
-				}
-
-				@Override
-				protected void showCurrentEditValue(DirectEditRequest request) {
-				}
-			});
-		}
-	}
+	protected void createEditPolicies() {}
 
 	@Override
 	protected void setBackgroundColor(IFigure l) {
@@ -116,13 +116,30 @@ public class ValueEditPart extends AbstractValueBaseEditPart {
 
 	@Override
 	protected Point calculatePos() {
-		/*if (!isEvent()) */return super.calculatePos();
+		/*if (!isEvent()) */
 
 		/*if (parentPart != null) {
 			Rectangle bounds = parentPart.getFigure().getBounds();
             return new Point(bounds.x, bounds.y);
 		}
 		return new Point(0, 0);*/
+
+		if (parentPart != null) {
+			Rectangle bounds = ((InterfaceEditPart)parentPart).getFigure().getBounds();
+			int x = 0;
+			if (isInput()) {
+				int width = 40;
+				width = getFigure().getBounds().width;
+				width = Math.max(40, width);
+				x = bounds.x + 2 - width;
+			}
+			else {
+				x = bounds.x + bounds.width - 2;
+			}
+			int y = bounds.y;
+			return new Point(x, y);
+		}
+		return new Point(0, 0);
 	}
 
 	@Override

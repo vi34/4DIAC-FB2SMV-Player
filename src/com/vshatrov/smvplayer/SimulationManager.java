@@ -14,7 +14,7 @@ public class SimulationManager implements IChildrenProvider {
     private static Map<EditPart, ValueElement> simulatedElements = new HashMap<>();
 
 
-    public static ValueElement getValueElement(InterfaceEditPart editPart, FB fb) {
+    public static ValueElement getValueElement(EditPart editPart, FB fb) {
         if (simulatedElements.containsKey(editPart)) {
             return simulatedElements.get(editPart);
         } else {

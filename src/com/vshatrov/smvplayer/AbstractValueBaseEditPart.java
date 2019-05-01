@@ -35,14 +35,14 @@ import java.util.List;
 
 public abstract class AbstractValueBaseEditPart extends AbstractViewEditPart implements SpecificLayerEditPart{
 
-	protected InterfaceEditPart parentPart;
+	protected EditPart parentPart;
 
 	private IPropertyChangeListener listener;
 
 	@Override
 	public void activate() {
 		super.activate();
-		for (Object object : getViewer().getEditPartRegistry().keySet()) {
+		/*for (Object object : getViewer().getEditPartRegistry().keySet()) {
 			if (object instanceof IInterfaceElement) {
 				IInterfaceElement interfaceElement = (IInterfaceElement) object;
 				if (interfaceElement.equals(getInterfaceElement())) {
@@ -84,7 +84,7 @@ public abstract class AbstractValueBaseEditPart extends AbstractViewEditPart imp
 						}
 					}
 
-					/*if (subInterfaceElement != null) {
+					*//*if (subInterfaceElement != null) {
 						Object subObject = null;
 						for (Object obj : getViewer().getEditPartRegistry().values()) {
 							if (obj instanceof MonitoringAdapterEditPart) {
@@ -129,16 +129,11 @@ public abstract class AbstractValueBaseEditPart extends AbstractViewEditPart imp
 								});
 							}
 						}
-					}*/
+					}*//*
 				}
 			}
-		}
+		}*/
 		refreshVisuals();
-	}
-
-	@Override
-	public INamedElement getINamedElement() {
-		return getInterfaceElement();
 	}
 
 	@Override
@@ -164,24 +159,7 @@ public abstract class AbstractValueBaseEditPart extends AbstractViewEditPart imp
 		return super.understandsRequest(request);
 	}
 	
-	protected Point calculatePos() {
-		if (parentPart != null) {
-			Rectangle bounds = parentPart.getFigure().getBounds();
-			int x = 0;
-			if (isInput()) {
-				int width = 40;
-				width = getFigure().getBounds().width;
-				width = Math.max(40, width);
-				x = bounds.x - 2 - width;
-			}
-			else {
-				x = bounds.x + bounds.width + 2;
-			}
-			int y = bounds.y;
-			return new Point(x, y);
-		}
-		return new Point(0, 0);
-	}
+	protected abstract Point calculatePos();
 	
 	@Override
 	protected void refreshVisuals() {
@@ -227,14 +205,6 @@ public abstract class AbstractValueBaseEditPart extends AbstractViewEditPart imp
 		setBackgroundColor(figure);
 	}
 
-
-	protected boolean isInput() {
-		return getInterfaceElement().isIsInput();
-	}
-	
-	protected IInterfaceElement getInterfaceElement() {
-		return parentPart.getModel();
-	}
 
 	@Override
 	protected IPropertyChangeListener getPreferenceChangeListener() {

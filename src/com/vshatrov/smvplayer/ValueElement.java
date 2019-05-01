@@ -3,6 +3,7 @@ package com.vshatrov.smvplayer;
 import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.ecore.impl.ENotificationImpl;
 import org.eclipse.emf.ecore.impl.EObjectImpl;
+import org.eclipse.fordiac.ide.application.editparts.FBEditPart;
 import org.eclipse.fordiac.ide.gef.editparts.IEditPartCreator;
 import org.eclipse.fordiac.ide.gef.editparts.InterfaceEditPart;
 import org.eclipse.fordiac.ide.model.libraryElement.FB;
@@ -12,16 +13,18 @@ import org.eclipse.gef.EditPart;
 public class ValueElement extends EObjectImpl implements IEditPartCreator {
 
     public static final int VALUE_CHANGE_FEATURE_ID = 0;
-    InterfaceEditPart parentPart;
+    EditPart parentPart;
     FB fb;
     String value;
     String evValue;
     String tsLast;
     String tsBorn;
+    boolean internal;
 
-    public ValueElement(InterfaceEditPart inteface, FB fb) {
+    public ValueElement(EditPart inteface, FB fb) {
         parentPart = inteface;
         this.fb = fb;
+        internal = !(inteface instanceof InterfaceEditPart);
     }
 
     public FB getFb() {
@@ -30,7 +33,11 @@ public class ValueElement extends EObjectImpl implements IEditPartCreator {
 
     @Override
     public EditPart createEditPart() {
-        return new ValueEditPart(parentPart);
+        if (internal) {
+            return new InternalValueEditPart((FBEditPart)parentPart);
+        } else {
+            return new ValueEditPart((InterfaceEditPart) parentPart);
+        }
     }
 
     public String getCurrentValue() {
