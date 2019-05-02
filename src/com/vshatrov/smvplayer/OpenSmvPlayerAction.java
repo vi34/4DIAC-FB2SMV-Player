@@ -65,7 +65,8 @@ public class OpenSmvPlayerAction extends AbstractHandler {
 
 		IWorkbenchPage activePage = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
 		try {
-			activePage.openEditor(input, SMV_PLAYER_ID);			
+			activePage.openEditor(input, SMV_PLAYER_ID);
+			activePage.showView(CounterExampleView.ID);
 		} catch (PartInitException e) {
 			ApplicationPlugin.getDefault().logError(
 					"Composite Instance editor can not be opened: ", e); //$NON-NLS-1$

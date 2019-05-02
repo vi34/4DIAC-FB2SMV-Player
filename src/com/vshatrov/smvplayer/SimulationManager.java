@@ -13,6 +13,11 @@ public class SimulationManager implements IChildrenProvider {
 
     private static Map<EditPart, ValueElement> simulatedElements = new HashMap<>();
 
+    static boolean enabled = true;
+
+    static void clear() {
+        simulatedElements.clear();
+    }
 
     public static ValueElement getValueElement(EditPart editPart, FB fb) {
         if (simulatedElements.containsKey(editPart)) {
@@ -51,6 +56,6 @@ public class SimulationManager implements IChildrenProvider {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return enabled;
     }
 }

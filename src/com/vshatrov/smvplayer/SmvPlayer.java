@@ -93,12 +93,13 @@ public class SmvPlayer extends DiagramEditor {
 			Object content = untypedInput.getContent();
 			if ((content instanceof FB) && (((FB) content).getType() instanceof CompositeFBType)) {
 				fb = (FB) content;
-				setPartName(getNameHierarchy());
+				setPartName("SMVPlayer : " + getNameHierarchy());
 				//we need to copy the type so that we have an instance specific network TODO consider using here the type
 				//cfbt = EcoreUtil.copy((CompositeFBType) fb.getFBType()); 
 				cfbt = (CompositeFBType) fb.getType();
 				this.fbEditPart = untypedInput.getFbEditPart();
 				mapper = new Mapper(cfbt.getName());
+				SimulationManager.enabled = true;
 			}
 		}
 	}
@@ -133,6 +134,9 @@ public class SmvPlayer extends DiagramEditor {
 		while(cont instanceof INamedElement){
 			retVal.insert(0, ((INamedElement)cont).getName() + "."); //$NON-NLS-1$
 			if(cont instanceof Application) {
+				break;
+			}
+			if (cont.eContainer() == null || cont.eContainer().eContainer() == null) {
 				break;
 			}
 			cont = cont.eContainer().eContainer();
@@ -251,4 +255,11 @@ public class SmvPlayer extends DiagramEditor {
 		this.counterExampleView = counterExampleView;
 	}
 
+	@Override
+	public void dispose() {
+		super.dispose();
+		SimulationManager.enabled = false;
+		SimulationManager.clear();
+
+	}
 }

@@ -23,8 +23,9 @@ public class CounterExampleView extends ViewPart {
 	public static final Color CHANGED = new Color(null, 73, 212, 134, 10);
 
 	@Inject IWorkbench workbench;
-	
+
 	private Composite sectionClient;
+	private Composite tableSection;
 	private Table tableViewer;
 	private Spinner step;
 	private SmvPlayer smvPlayer = null;
@@ -59,7 +60,7 @@ public class CounterExampleView extends ViewPart {
 	@Override
 	public void createPartControl(Composite parent) {
 		setEditor();
-		
+
 		sectionClient = new Composite(parent, SWT.NONE);
 		sectionClient.setLayout(new GridLayout(1, false));
 		Composite controlsPane = new Composite(sectionClient, SWT.NONE);
@@ -93,8 +94,8 @@ public class CounterExampleView extends ViewPart {
 
 //		TableViewerColumn column = new TableViewerColumn(tableViewer, SWT.NONE);
 //		column.setLabelProvider(new StringLabelProvider());
-
-		createTable();
+//		tableSection = new Composite(sectionClient, SWT.NONE);
+//		tableSection.setLayout(new GridLayout(1, false));
 		Button pickFile = new Button(controlsPane, SWT.NONE);
 		pickFile.setText("Choose counterexample");
 		pickFile.addListener(SWT.Selection, e -> {
@@ -115,7 +116,16 @@ public class CounterExampleView extends ViewPart {
 	}
 
 	private void buildTable(CounterExample counterExample) {
-		tableViewer.removeAll();
+		if (tableViewer != null) {
+			tableViewer.dispose();
+		}
+		tableViewer = new Table(sectionClient, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.BORDER | SWT.FULL_SELECTION);
+		GridData data = new GridData(SWT.FILL, SWT.FILL, true, true);
+		data.heightHint = 200;
+		tableViewer.setLayoutData(data);
+		tableViewer.setLinesVisible(true);
+		tableViewer.setHeaderVisible(true);
+		TableColumn varsColumn = new TableColumn (tableViewer, SWT.NONE);
 
 		for (int i = tableViewer.getColumnCount(); i < counterExample.states.length + 1; i++) {
 			new TableColumn(tableViewer, SWT.FULL_SELECTION);
@@ -125,7 +135,6 @@ public class CounterExampleView extends ViewPart {
 		for (int i = 1; i < counterExample.states.length + 1; i++) {
 			TableColumn column = tableViewer.getColumn(i);
 			column.setText(counterExample.states[i - 1]);
-			//column.setWidth(COLUMN_WIDTH);
 		}
 
 		for (int i = 0; i < counterExample.data.length; i++) {
@@ -158,24 +167,16 @@ public class CounterExampleView extends ViewPart {
 		tableViewer.setSortColumn(tableViewer.getColumn(0));
 		tableViewer.setSortDirection(SWT.UP);
 		tableViewer.layout();
+		sectionClient.redraw();
 	}
 
-	private void createTable() {
-		tableViewer = new Table(sectionClient, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.BORDER | SWT.FULL_SELECTION);
-		GridData data = new GridData(SWT.FILL, SWT.FILL, true, true);
-		data.heightHint = 200;
-		tableViewer.setLayoutData(data);
-		tableViewer.setLinesVisible(true);
-		tableViewer.setHeaderVisible(true);
-		TableColumn varsColumn = new TableColumn (tableViewer, SWT.NONE);
-	}
-
-
-	private void setEditor() {
+	public void setEditor() {
 		IEditorPart activeEditor = getSite().getPage().getActiveEditor();
 		if (activeEditor instanceof SmvPlayer && (smvPlayer == null ||smvPlayer != activeEditor)) {
 			smvPlayer = (SmvPlayer) activeEditor;
 			smvPlayer.setCEView(this);
+		}
+		if (counterExample != null) {
 			smvPlayer.setCounterExample(counterExample);
 		}
 	}
