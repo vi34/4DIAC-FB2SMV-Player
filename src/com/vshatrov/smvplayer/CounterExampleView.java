@@ -21,17 +21,20 @@ public class CounterExampleView extends ViewPart {
 	public static final Color UNMAPPED = new Color(null, 212, 212, 212, 50);
 	public static final Color IMPLICIT = new Color(null, 255, 252, 238);
 	public static final Color CHANGED = new Color(null, 73, 212, 134, 10);
+	public static final int TABLE_STYLE = SWT.MULTI | SWT.V_SCROLL | SWT.BORDER | SWT.FULL_SELECTION;
+	public static final int TABLE_HEIGHT = 250;
 
 	@Inject IWorkbench workbench;
 
 	private Composite sectionClient;
 	private Composite tableSection;
-	private Table tableViewer;
+	private Table table;
 	private Spinner step;
 	private SmvPlayer smvPlayer = null;
 	private Label currentFB;
 	private Label currentTime;
 	private CounterExample counterExample;
+	private TableColumn currentStateColumn;
 
 	public void setCurrentFB(String currentFB) {
 		this.currentFB.setText(currentFB);
@@ -74,12 +77,13 @@ public class CounterExampleView extends ViewPart {
 		step.setIncrement(1);
 		step.setPageIncrement(4);
 		step.addModifyListener(e -> {
-			int selection = step.getSelection();
-			stepLabel.setText("Step " + selection + " : ");
+			stepLabel.setText("Step " + step.getSelection() + " : ");
 			setEditor();
+			int state = step.getSelection() - 1;
 			if (smvPlayer != null) {
-				smvPlayer.setState(step.getSelection() - 1);
+				smvPlayer.setState(state);
 			}
+			selectColumn(state);
 			sectionClient.redraw();
 		});
 
@@ -92,10 +96,6 @@ public class CounterExampleView extends ViewPart {
 		currentTime = new Label(controlsPane, SWT.LEFT);
 		currentTime.setText("");
 
-//		TableViewerColumn column = new TableViewerColumn(tableViewer, SWT.NONE);
-//		column.setLabelProvider(new StringLabelProvider());
-//		tableSection = new Composite(sectionClient, SWT.NONE);
-//		tableSection.setLayout(new GridLayout(1, false));
 		Button pickFile = new Button(controlsPane, SWT.NONE);
 		pickFile.setText("Choose counterexample");
 		pickFile.addListener(SWT.Selection, e -> {
@@ -104,70 +104,135 @@ public class CounterExampleView extends ViewPart {
 			CounterExampleReader counterExampleReader = new CounterExampleReader();
 			try {
 				counterExample = counterExampleReader.readCSV(file);
+				reset();
 				step.setMaximum(counterExample.states.length);
-				setEditor();
 				buildTable(counterExample);
 			} catch (IOException e1) {
 				e1.printStackTrace();
 			}
 		});
+	}
 
-//		tableViewer.setContentProvider(ArrayContentProvider.getInstance());
+	private void selectColumn(int state) {
+		TableColumn currentState = table.getColumn(state);
+		table.showColumn(currentState);
+		if (currentStateColumn != null) {
+			currentStateColumn.setText(currentStateColumn.getText().substring(1));
+		}
+		currentStateColumn = currentState;
+		currentStateColumn.setText("▶" + currentStateColumn.getText());
 	}
 
 	private void buildTable(CounterExample counterExample) {
-		if (tableViewer != null) {
-			tableViewer.dispose();
-		}
-		tableViewer = new Table(sectionClient, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.BORDER | SWT.FULL_SELECTION);
-		GridData data = new GridData(SWT.FILL, SWT.FILL, true, true);
-		data.heightHint = 200;
-		tableViewer.setLayoutData(data);
-		tableViewer.setLinesVisible(true);
-		tableViewer.setHeaderVisible(true);
-		TableColumn varsColumn = new TableColumn (tableViewer, SWT.NONE);
+		tableSection = new Composite(sectionClient, SWT.NONE);
+		GridLayout tsectionLayout = new GridLayout(2, false);
+		tsectionLayout.marginWidth = 0;
+		tableSection.setLayout(tsectionLayout);
+		Table varsTable = new Table(tableSection, TABLE_STYLE);
+		GridData layoutData = new GridData(SWT.LEFT, SWT.FILL, true, true);
+		layoutData.heightHint = TABLE_HEIGHT;
+		layoutData.widthHint = 225;
+		varsTable.setLayoutData(layoutData);
+		varsTable.setLinesVisible(true);
+		varsTable.setHeaderVisible(true);
+		TableColumn varsColumn = new TableColumn(varsTable, SWT.FILL);
+		varsColumn.setText("Variables \\ States");
 
-		for (int i = tableViewer.getColumnCount(); i < counterExample.states.length + 1; i++) {
-			new TableColumn(tableViewer, SWT.FULL_SELECTION);
+		table = new Table(tableSection, TABLE_STYLE | SWT.H_SCROLL);
+		GridData data = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
+		data.heightHint = TABLE_HEIGHT;
+		data.widthHint = 650;
+		table.setLayoutData(data);
+		table.setLinesVisible(true);
+		table.setHeaderVisible(true);
+		syncTables(varsTable, table);
+
+		for (int i = table.getColumnCount(); i < counterExample.states.length; i++) {
+			new TableColumn(table, SWT.FULL_SELECTION);
 		}
 
-		tableViewer.getColumn(0).setText("Variables \\ States");
-		for (int i = 1; i < counterExample.states.length + 1; i++) {
-			TableColumn column = tableViewer.getColumn(i);
-			column.setText(counterExample.states[i - 1]);
+		for (int i = 0; i < counterExample.states.length; i++) {
+			TableColumn column = table.getColumn(i);
+			column.setText(counterExample.states[i]);
 		}
 
 		for (int i = 0; i < counterExample.data.length; i++) {
 			String[] varStates = counterExample.data[i];
 
-			TableItem item = new TableItem(tableViewer, SWT.NONE);
+			TableItem item = new TableItem(table, SWT.NONE);
+			TableItem varItem = new TableItem(varsTable, SWT.NONE);
 			CounterExample.VarQualifier qualifier = counterExample.vars[i];
-			item.setText(0, qualifier.FQN);
+			varItem.setText(0, qualifier.FQN);
 
 			if (!qualifier.mapped) {
 				item.setBackground(UNMAPPED);
+				varItem.setBackground(UNMAPPED );
 			} else if (!qualifier.explicit) {
 				item.setBackground(IMPLICIT);
+				varItem.setBackground(IMPLICIT);
 			}
 
 			String prev = varStates[0];
 			for (int j = 0; j < varStates.length; j++) {
-				item.setText(j + 1, varStates[j]);
+				item.setText(j, varStates[j]);
 				if (!prev.equals(varStates[j])) {
-					item.setBackground(j + 1, CHANGED);
+					item.setBackground(j, CHANGED);
 				}
 				prev = varStates[j];
 			}
-
 		}
 
-		for (int i = 0; i < tableViewer.getColumnCount(); i++) {
-			tableViewer.getColumn(i).pack();
+		for (int i = 0; i < table.getColumnCount(); i++) {
+			table.getColumn(i).pack();
 		}
-		tableViewer.setSortColumn(tableViewer.getColumn(0));
-		tableViewer.setSortDirection(SWT.UP);
-		tableViewer.layout();
-		sectionClient.redraw();
+		varsColumn.pack();
+		varsTable.layout();
+		table.layout();
+		tableSection.layout();
+		tableSection.redraw();
+	}
+
+	private void reset() {
+		step.setSelection(1);
+		if (tableSection != null) {
+			tableSection.dispose();
+		}
+		currentStateColumn = null;
+		setEditor();
+	}
+
+	private void syncTables(Table leftTable, Table rigtTable) {
+		leftTable.addListener(SWT.Selection, new Listener() {
+			public void handleEvent(Event event) {
+				rigtTable.setSelection(leftTable.getSelectionIndices());
+			}
+		});
+		rigtTable.addListener(SWT.Selection, new Listener() {
+			public void handleEvent(Event event) {
+				leftTable.setSelection(rigtTable.getSelectionIndices());
+			}
+		});
+		ScrollBar vBarLeft = leftTable.getVerticalBar();
+		vBarLeft.addListener(SWT.Selection, new Listener() {
+			public void handleEvent(Event event) {
+				rigtTable.setTopIndex(leftTable.getTopIndex());
+			}
+		});
+		ScrollBar vBarRight = rigtTable.getVerticalBar();
+		vBarRight.addListener(SWT.Selection, new Listener() {
+			public void handleEvent(Event event) {
+				leftTable.setTopIndex(rigtTable.getTopIndex());
+			}
+		});
+		// Horizontal bar on second rigtTable takes up a little extra space.
+		// To keep vertical scroll bars in sink, force table1 to end above
+		// horizontal scrollbar
+//		ScrollBar hBarRight = rigtTable.getHorizontalBar();
+//		Label spacer = new Label(tableSection, SWT.NONE);
+//		GridData spacerData = new GridData();
+//		spacerData.heightHint = hBarRight.getSize().y;
+//		spacer.setVisible(false);
+		tableSection.setBackground(leftTable.getBackground());
 	}
 
 	public void setEditor() {
@@ -183,6 +248,6 @@ public class CounterExampleView extends ViewPart {
 
 	@Override
 	public void setFocus() {
-		tableViewer.setFocus();
+		table.setFocus();
 	}
 }
