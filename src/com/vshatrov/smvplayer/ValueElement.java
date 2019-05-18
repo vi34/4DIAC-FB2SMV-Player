@@ -16,7 +16,7 @@ public class ValueElement extends EObjectImpl implements IEditPartCreator {
     EditPart parentPart;
     FB fb;
     String value;
-    String evValue;
+    String evValue = "FALSE";
     String tsLast;
     String tsBorn;
     boolean internal;

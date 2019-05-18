@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
 import org.eclipse.fordiac.ide.model.libraryElement.CompositeFBType;
@@ -22,7 +23,6 @@ public class CounterExampleReader {
 		List<String> lines = Files.readAllLines(Paths.get(filePath));
 		String[] states = lines.get(0).replaceAll("-1[.]", "").split(DATA_DELIMETER);
 		result.states = Arrays.copyOfRange(states, 1, states.length);
-		result.data = new String[lines.size() - 1][states.length - 1];
 		result.vars = new CounterExample.VarQualifier[lines.size() - 1];
 
 		for (int i = 1; i < lines.size(); i++) {
@@ -31,11 +31,16 @@ public class CounterExampleReader {
 			CounterExample.VarQualifier varQualifier = new CounterExample.VarQualifier();
 			varQualifier.FQN = var[0];
 			varQualifier.parts = nameParts;
+			varQualifier.data = Arrays.copyOfRange(var, 1, var.length);
 			result.vars[i - 1] = varQualifier;
-			result.data[i - 1] = Arrays.copyOfRange(var, 1, var.length);
 		}
+		sort(result);
 		return result;
 	}
 
-	
+	private void sort(CounterExample result) {
+		Arrays.sort(result.vars, Comparator.comparing(v -> v.FQN));
+	}
+
+
 }

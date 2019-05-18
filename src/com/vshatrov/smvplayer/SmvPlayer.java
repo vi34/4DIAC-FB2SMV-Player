@@ -153,7 +153,7 @@ public class SmvPlayer extends DiagramEditor {
 	private void updateVars() {
 		for (int i = 0; i < counterExample.vars.length; i++) {
 			CounterExample.VarQualifier qualifier = counterExample.vars[i];
-			String value = counterExample.data[i][currentState];
+			String value = qualifier.data[currentState];
 			FB fb = mapper.var2FB.get(qualifier);
 			if (mapper.var2Interface.containsKey(qualifier)) {
 				IInterfaceElement iface = mapper.var2Interface.get(qualifier);
@@ -178,7 +178,7 @@ public class SmvPlayer extends DiagramEditor {
 
 			if (mapper.isTimeVar(qualifier)) {
 				try {
-					currentTime = Integer.parseInt(counterExample.data[i][currentState]);
+					currentTime = Integer.parseInt(qualifier.data[currentState]);
 					counterExampleView.setTime(currentTime);
 				} catch (NumberFormatException e) { }
 			}
@@ -190,7 +190,7 @@ public class SmvPlayer extends DiagramEditor {
 		for (int i = 0; i < counterExample.vars.length; i++) {
 			CounterExample.VarQualifier qualifier = counterExample.vars[i];
 			if (mapper.isExecutionVar(qualifier)) {
-				if (counterExample.data[i][currentState].equals("TRUE")) {
+				if (qualifier.data[currentState].equals("TRUE")) {
 					FB fb = mapper.getFB(qualifier);
 					if (fb != null) {
 						highlightFB(fb);

@@ -156,8 +156,8 @@ public class CounterExampleView extends ViewPart {
 			column.setText(counterExample.states[i]);
 		}
 
-		for (int i = 0; i < counterExample.data.length; i++) {
-			String[] varStates = counterExample.data[i];
+		for (int i = 0; i < counterExample.vars.length; i++) {
+			String[] varStates = counterExample.vars[i].data;
 
 			TableItem item = new TableItem(table, SWT.NONE);
 			TableItem varItem = new TableItem(varsTable, SWT.NONE);
