@@ -13,6 +13,7 @@
 package com.vshatrov.smvplayer;
 
 import com.vshatrov.smvplayer.read.CounterExample;
+import org.apache.commons.lang.StringUtils;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.fordiac.ide.application.editparts.FBEditPart;
@@ -195,13 +196,13 @@ public class SmvPlayer extends DiagramEditor {
 					if (fb != null) {
 						highlightFB(fb);
 					}
-					setCurrentFB(qualifier.FQN);
+					setCurrentFB(qualifier);
 					found = true;
 				}
 			}
 		}
 		if (!found) {
-			setCurrentFB("");
+			setCurrentFB(null);
 			getViewer().deselectAll();
 		}
 	}
@@ -246,8 +247,17 @@ public class SmvPlayer extends DiagramEditor {
 		}
 	}
 
-	private void setCurrentFB(String fqn) {
-		currentFB = fqn;
+	private void setCurrentFB(CounterExample.VarQualifier qualifier) {
+		if (qualifier != null) {
+			StringBuilder fqn = new StringBuilder();
+			for (int i = 1; i < qualifier.parts.size() - 1; i++) {
+				fqn.append(qualifier.parts.get(i)).append(".");
+			}
+			fqn.append(StringUtils.substringBeforeLast(qualifier.parts.get(qualifier.parts.size() - 1), "_alpha"));
+			currentFB = fqn.toString();
+		} else {
+			currentFB = "";
+		}
 		counterExampleView.setCurrentFB(currentFB);
 	}
 

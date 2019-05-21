@@ -63,7 +63,7 @@ class Mapper {
     }
 
     private String trimPart(String qualifierPart) {
-        return StringUtils.substringBeforeLast(qualifierPart, "_");
+        return StringUtils.substringBefore(qualifierPart, "_");
     }
 
     public boolean isTimeVar(CounterExample.VarQualifier qualifier) {
